@@ -1,6 +1,5 @@
-use crate::origin;
+use crate::types;
 use crate::*;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,7 +29,7 @@ impl TryFrom<event::callback_event::Progress> for Progress {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Notification {
-    pub severity: origin::Severity,
+    pub severity: types::Severity,
     pub content: String,
     pub line: Option<usize>,
 }

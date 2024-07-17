@@ -1,10 +1,6 @@
-use crate::{event, origin::*, E};
-use prost::Message;
+use crate::{event, types::*, E};
 use serde::{Deserialize, Serialize};
-use serde_wasm_bindgen::to_value;
 use std::collections::HashMap;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_test::console_log;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OperationDone {
@@ -63,9 +59,7 @@ impl TryFrom<event::CallbackEvent> for CallbackEvent {
     fn try_from(ev: event::CallbackEvent) -> Result<Self, Self::Error> {
         use event::callback_event::Event;
 
-        let Some(event) = ev.event else {
-            return Err(E::MissedField(String::from("event")));
-        };
+        let event = ev.event.ok_or(E::MissedField(String::from("event")))?;
         Ok(match event {
             Event::AttachmentsUpdated(v) => CallbackEvent::AttachmentsUpdated {
                 len: v.len,
@@ -98,13 +92,11 @@ impl TryFrom<event::CallbackEvent> for CallbackEvent {
                 CallbackEvent::SearchValuesUpdated(if v.values.is_empty() {
                     None
                 } else {
-                    console_log!("RS: SearchValuesUpdated: {v:?}");
                     let values = v
                         .values
                         .into_iter()
                         .map(|(k, v)| (k as u8, (v.min as i64, v.max as i64)))
                         .collect::<HashMap<u8, (i64, i64)>>();
-                    console_log!("RS: SearchValuesUpdated (values): {values:?}");
                     Some(values)
                 })
             }
@@ -118,65 +110,4 @@ impl TryFrom<event::CallbackEvent> for CallbackEvent {
             },
         })
     }
-}
-
-#[wasm_bindgen]
-pub fn decode(buf: &[u8]) -> Result<JsValue, E> {
-    let msg = event::CallbackEvent::decode(buf)?;
-    console_log!("DECODED: {msg:?}");
-    let cb_event: CallbackEvent = msg.try_into()?;
-    console_log!("CONVERTED: {cb_event:?}");
-    Ok(to_value(&cb_event)?)
-}
-
-#[wasm_bindgen]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TestMapA {
-    a: HashMap<u8, (f64, f64)>,
-    b: HashMap<i64, (f64, f64)>,
-    c: HashMap<String, (f64, f64)>,
-    d: HashMap<i32, i32>,
-    e: Vec<i32>,
-}
-
-impl TestMapA {
-    pub fn gen() -> Self {
-        let mut a: HashMap<u8, (f64, f64)> = HashMap::new();
-        let mut b: HashMap<i64, (f64, f64)> = HashMap::new();
-        let mut c: HashMap<String, (f64, f64)> = HashMap::new();
-        let mut d: HashMap<i32, i32> = HashMap::new();
-        a.insert(1, (1.0, 2.0));
-        a.insert(2, (3.0, 4.0));
-        a.insert(3, (5.0, 6.0));
-        a.insert(4, (7.0, 8.0));
-        b.insert(1, (1.0, 2.0));
-        b.insert(2, (3.0, 4.0));
-        b.insert(3, (5.0, 6.0));
-        b.insert(4, (7.0, 8.0));
-        c.insert(String::from("1"), (1.0, 2.0));
-        c.insert(String::from("2"), (3.0, 4.0));
-        c.insert(String::from("3"), (5.0, 6.0));
-        c.insert(String::from("4"), (7.0, 8.0));
-        d.insert(1, 2);
-        d.insert(3, 4);
-        d.insert(5, 6);
-        d.insert(7, 8);
-        Self {
-            a,
-            b,
-            c,
-            d,
-            e: vec![1, 2, 3, 4],
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub fn get_wasm_bindgen() -> TestMapA {
-    TestMapA::gen()
-}
-
-#[wasm_bindgen]
-pub fn get_serde_wasm_bindgen() -> JsValue {
-    to_value(&TestMapA::gen()).unwrap()
 }
