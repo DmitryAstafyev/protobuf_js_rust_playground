@@ -29,6 +29,7 @@ function decodeIncome(path: string) {
                     msg.SearchValuesUpdated
                 )}`
             );
+            console.log(msg);
         }
     });
 }
@@ -42,6 +43,7 @@ function test() {
         b: objRef.b,
         c: objRef.c,
         d: objRef.d,
+        e: objRef.e,
     };
     console.log(`obj ref:`);
     console.log(objRef);
@@ -51,6 +53,7 @@ function test() {
             pro.get_serde_wasm_bindgen()
         )}`
     );
+    console.log(pro.get_serde_wasm_bindgen());
 }
 
 test();
